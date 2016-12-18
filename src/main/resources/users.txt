@@ -1,0 +1,9 @@
+1	Vadim	26
+2	Jon	23
+3	Kirill	40
+4	Igory	20
+5	Sveta	18
+6	Ann	25
+7	Micke	18
+8	Ivan	55
+10	George Smith	58
