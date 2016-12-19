@@ -7,6 +7,14 @@
     <groupId>ru.vadim.usersdao</groupId>
     <artifactId>users-dao</artifactId>
     <version>0.1</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>sample.plugin</groupId>
+            <artifactId>hello-maven-plugin</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
     <build>
         <plugins>
             <plugin>
@@ -16,6 +24,24 @@
                     <source>1.8</source>
                     <target>1.8</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.modello</groupId>
+                <artifactId>modello-maven-plugin</artifactId>
+                <version>1.8.1</version>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <models>
+                                <model>src/main/mdo/maven.mdo</model>
+                            </models>
+                            <version>4.0.0</version>
+                        </configuration>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

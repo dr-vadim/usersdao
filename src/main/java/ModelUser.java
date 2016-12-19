@@ -10,7 +10,7 @@ public class ModelUser implements Model{
     private int id;
     private String name;
     private int age;
-    private List<ModelAuto> auto = null;
+    private List<ModelAuto> auto = new ArrayList<>();;
 
     public static enum Fields{
         ID, NAME, AGE
@@ -18,12 +18,11 @@ public class ModelUser implements Model{
 
     ModelUser(int id, String name, int age, List<ModelAuto> auto){
         this(id,name,age);
-        this.auto = new ArrayList<>(auto);
+        this.auto.addAll(auto);
     }
 
     ModelUser(int id, String name, int age, ModelAuto auto){
         this(id,name,age);
-        this.auto = new ArrayList<>();
         this.auto.add(auto);
     }
 
@@ -62,7 +61,11 @@ public class ModelUser implements Model{
     }
 
     public void setAuto(List<ModelAuto> auto) {
-        this.auto = auto;
+        this.auto.addAll(auto);
+    }
+
+    public void setAuto(ModelAuto auto){
+        this.auto.add(auto);
     }
 
     public String toString(){

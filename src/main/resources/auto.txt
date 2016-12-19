@@ -7,3 +7,4 @@
 5	Renault	white	5
 8	Rols Roys	grey	8
 10	Citroen	black	10
+11	Lexus	grey	11
