@@ -24,6 +24,12 @@ public class ModelAuto implements Model{
         this.userId = userId;
     }
 
+    ModelAuto(String model, String color, int userId){
+        this.model = model;
+        this.color = color;
+        this.userId = userId;
+    }
+
     public int getId() {
         return id;
     }

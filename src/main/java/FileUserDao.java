@@ -13,7 +13,7 @@ public class FileUserDao implements UserDao<ModelUser> {
     FileUserDao(){
         if(usersList == null || usersList.size() == 0){
             usersList = new ArrayList<>();
-            readFile();
+            read();
         }
     }
 
@@ -21,7 +21,7 @@ public class FileUserDao implements UserDao<ModelUser> {
         usersList = new ArrayList<ModelUser>(users);
     }
 
-    public void readFile() {
+    public void read() {
         int i;
 
         try(FileReader fr = new FileReader(FILE_PATH)){
@@ -43,7 +43,6 @@ public class FileUserDao implements UserDao<ModelUser> {
                     int id = Integer.valueOf(strs[ModelUser.Fields.ID.ordinal()]);
                     String name = strs[ModelUser.Fields.NAME.ordinal()];
                     int age = Integer.valueOf(strs[ModelUser.Fields.AGE.ordinal()]);
-                    FileAutoDao fad = new FileAutoDao();
                     usersList.add(new ModelUser(id, name,age));
                 }catch(Exception e){
                     System.out.println("Exception: "+e.getMessage());
@@ -60,7 +59,7 @@ public class FileUserDao implements UserDao<ModelUser> {
 
     private void writeFile() {
         if(usersList == null)
-            readFile();
+            read();
 
         try (FileWriter fw = new FileWriter(FILE_PATH)){
             String newStr = "";
@@ -81,15 +80,15 @@ public class FileUserDao implements UserDao<ModelUser> {
 
     }
 
-    public List<ModelUser> getAll() {
+    public List<ModelUser> get() {
         if(usersList == null)
-            readFile();
+            read();
         return usersList;
     }
 
-    public ModelUser getById(int id) {
+    public ModelUser get(int id) {
         if(usersList == null)
-            readFile();
+            read();
 
         for (ModelUser mu: usersList) {
             if(id == mu.getId())
@@ -116,8 +115,8 @@ public class FileUserDao implements UserDao<ModelUser> {
         return result;
     }
 
-    public void addAuto(List<ModelAuto> auto, int userId){
-        ModelUser user = getById(userId);
+    public <A extends Model> void addAuto(List<A> auto, int userId){
+        ModelUser user = get(userId);
         int index = usersList.indexOf(user);
         if(index >= 0) {
             user.setAuto(auto);
@@ -125,8 +124,8 @@ public class FileUserDao implements UserDao<ModelUser> {
         }
     }
 
-    public void addAuto(ModelAuto auto, int userId){
-        ModelUser user = getById(userId);
+    public <A extends Model> void addAuto(A auto, int userId){
+        ModelUser user = get(userId);
         int index = usersList.indexOf(user);
         if(index >= 0) {
             user.setAuto(auto);
@@ -154,7 +153,7 @@ public class FileUserDao implements UserDao<ModelUser> {
     public boolean remove(int id) {
         boolean result = false;
         if(usersList == null)
-            readFile();
+            read();
         List<ModelUser> tmp = new ArrayList<>(usersList);
         for (ModelUser mu: usersList) {
             if(id == mu.getId()){
@@ -166,12 +165,11 @@ public class FileUserDao implements UserDao<ModelUser> {
         return result;
     }
 
-    public void removeAll() {
+    public boolean remove() {
         if(usersList == null)
-            readFile();
-        FileAutoDao fad = new FileAutoDao();
-        fad.removeAll();
+            read();
         usersList.clear();
         writeFile();
+        return true;
     }
 }

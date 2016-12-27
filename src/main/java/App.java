@@ -8,17 +8,31 @@ import java.util.List;
  */
 public class App {
     public static void main(String[] args) {
-        FileAutoDao fad = new FileAutoDao();
-        FileUserDao fud = new FileUserDao();
-        for (ModelUser u: fud.getAll()) {
-            List<ModelAuto> al = fad.getAllByCat(u.getId());
-            if(al != null && al.size() > 0)
-                fud.addAuto(al,u.getId());
-        }
-        UserDao ud;
+        PDbAutoDao pad = new PDbAutoDao();
+        /*
+        AutoDao<ModelAuto> autoD = new FileAutoDao();
+        UserDao<ModelUser> userD = new FileUserDao();*/
 
-        ud = fud;
-        List<ModelUser> listUsers = new ArrayList<>(ud.getAll());
+        AutoDao<ModelAuto> autoD = new PDbAutoDao();
+        UserDao<ModelUser> userD = new PDbUserDao();
+
+        //userD.add(new ModelUser("Sveta",25));
+        /*boolean result = autoD.add(new ModelAuto("Renault","red",7));
+        System.out.println("Add auto result:"+result);
+        result = autoD.add(new ModelAuto("Mercedes","red",7));
+        System.out.println("Add auto result:"+result);*/
+        //autoD.removeByCat(7);
+        //autoD.add(new ModelAuto("Mercedes","red",5));
+        //autoD.remove(18);
+        autoD.update(19, new ModelAuto("Mercedes","white",5));
+
+        for (ModelUser u: userD.get()) {
+            List<ModelAuto> al = autoD.getByCat(u.getId());
+            if(al != null && al.size() > 0)
+                userD.addAuto(al,u.getId());
+        }
+
+        List<ModelUser> listUsers = new ArrayList<>(userD.get());
         for(ModelUser u: listUsers){
             System.out.println(u);
             List<ModelAuto> autos = u.getAuto();
@@ -28,47 +42,7 @@ public class App {
                 }
             }
         }
-/*
-        ud = fad;
-        System.out.println("-- Get auto by user with id=2 --");
-        List<ModelAuto> autoList = new ArrayList<>(ud.getAllByCat(2));
-        for(ModelAuto a: autoList){
-                System.out.println(a);
-        }
-        System.out.println("-- Get auto by id=4 --");
-        ModelAuto auto = (ModelAuto) ud.getById(4);
-        System.out.println(auto);
 
-        ud = fud;
-        System.out.println("-- Get user by id=9 --");
-        ModelUser user = (ModelUser) ud.getById(9);
-        System.out.println(user);*/
-/*
-        System.out.println("-- Add users (Ann and Micke) --");
-        List<ModelUser> lu = new ArrayList<>();
-        lu.add(new ModelUser(6, "Ann", 25));
-        lu.add(new ModelUser(7, "Micke", 18));
-        ud.add(lu);*/
-
-        /*System.out.println("-- Update color car for user George --");
-        ud = fad;
-        ud.update(10,new ModelAuto(10, "Citroen", "black", 10));*/
-        /*System.out.println("-- Update user name with id=9  --");
-        ud = fud;
-        ud.update(9, new ModelUser(10, "Saimon Black", 28));*/
-
-        System.out.println("-- Remove user with id=11 with cars --");
-        fad.removeByCat(11);
-        ud = fud;
-        ud.remove(11);
-
-        System.out.println("Add user Valera and car Lexus");
-        ud = fud;
-        ud.add(new ModelUser(11, "Valera", 24));
-        ud = fad;
-        ModelAuto a = new ModelAuto(11,"Lexus","grey",11);
-        ud.add(a);
-        fud.addAuto(a,11);
 
     }
 }

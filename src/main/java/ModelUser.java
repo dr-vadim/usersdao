@@ -32,6 +32,11 @@ public class ModelUser implements Model{
         this.age = age;
     }
 
+    ModelUser(String name, int age){
+        this.name = name;
+        this.age = age;
+    }
+
     public int getId() {
         return id;
     }
@@ -60,12 +65,12 @@ public class ModelUser implements Model{
         return auto;
     }
 
-    public void setAuto(List<ModelAuto> auto) {
-        this.auto.addAll(auto);
+    public <A extends Model> void setAuto(List<A> auto) {
+        this.auto.addAll((Collection<? extends ModelAuto>) auto);
     }
 
-    public void setAuto(ModelAuto auto){
-        this.auto.add(auto);
+    public <A extends Model> void setAuto(A auto){
+        this.auto.add((ModelAuto) auto);
     }
 
     public String toString(){

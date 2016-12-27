@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Created by User on 17.12.2016.
  */
-public class FileAutoDao implements UserDao<ModelAuto> {
+public class FileAutoDao implements AutoDao<ModelAuto> {
     private final String FILE_PATH = "./src/main/resources/auto.txt";
     private final String SEPARATOR = "\t";
     List<ModelAuto> mauto = null;
@@ -14,11 +14,11 @@ public class FileAutoDao implements UserDao<ModelAuto> {
     FileAutoDao(){
         if(mauto == null || mauto.size() == 0){
             mauto = new ArrayList<>();
-            readFile();
+            read();
         }
     }
 
-    public void readFile() {
+    public void read() {
         int i;
 
         try(FileReader fr = new FileReader(FILE_PATH)){
@@ -58,7 +58,7 @@ public class FileAutoDao implements UserDao<ModelAuto> {
 
     public void writeFile(){
         if(mauto == null)
-            readFile();
+            read();
 
         try (FileWriter fw = new FileWriter(FILE_PATH)){
 
@@ -79,15 +79,15 @@ public class FileAutoDao implements UserDao<ModelAuto> {
 
     }
 
-    public List<ModelAuto> getAll() {
+    public List<ModelAuto> get() {
         if(mauto == null)
-            readFile();
+            read();
         return mauto;
     }
 
-    public List<ModelAuto> getAllByCat(int id) {
+    public List<ModelAuto> getByCat(int id) {
         if(mauto == null)
-            readFile();
+            read();
         List<ModelAuto> malist = new ArrayList<>();
         for (ModelAuto ma: mauto) {
             if(id == ma.getUser())
@@ -96,9 +96,9 @@ public class FileAutoDao implements UserDao<ModelAuto> {
         return malist;
     }
 
-    public ModelAuto getById(int id) {
+    public ModelAuto get(int id) {
         if(mauto == null)
-            readFile();
+            read();
 
         for (ModelAuto ma: mauto) {
             if(id == ma.getId()) return ma;
@@ -145,7 +145,7 @@ public class FileAutoDao implements UserDao<ModelAuto> {
     public boolean remove(int id) {
         boolean result = false;
         if(mauto == null)
-            readFile();
+            read();
         List<ModelAuto> temp = new ArrayList<>(mauto);
         for (ModelAuto ma: mauto) {
             if(id == ma.getId()){
@@ -157,10 +157,10 @@ public class FileAutoDao implements UserDao<ModelAuto> {
         return result;
     }
 
-    public void removeByCat(int catId){
+    public boolean removeByCat(int catId){
         boolean result = false;
         if(mauto == null)
-            readFile();
+            read();
         List<ModelAuto> temp = new ArrayList<>(mauto);
         for (ModelAuto ma: mauto) {
             if(catId == ma.getUser()){
@@ -169,12 +169,14 @@ public class FileAutoDao implements UserDao<ModelAuto> {
         }
         mauto = temp;
         if(result) writeFile();
+        return result;
     }
 
-    public void removeAll() {
+    public boolean remove() {
         if(mauto == null)
-            readFile();
+            read();
         mauto.clear();
         writeFile();
+        return true;
     }
 }
