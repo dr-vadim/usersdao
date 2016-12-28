@@ -19,7 +19,7 @@ public class FileUserDao implements UserDao<ModelUser> {
     public FileUserDao(){
         if(usersList == null || usersList.size() == 0){
             usersList = new ArrayList<>();
-            read();
+            //read();
         }
     }
 

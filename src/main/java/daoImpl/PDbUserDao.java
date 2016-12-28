@@ -12,20 +12,21 @@ import java.util.List;
  * Created by User on 26.12.2016.
  */
 public class PDbUserDao implements UserDao<ModelUser> {
-    private static final String JDBC_CONNECTION_DB = "jdbc:postgresql://localhost:5432/usersdao";
-    private static final String JDBC_CONNECTION_USER = "postgres";
-    private static final String JDBC_CONNECTION_PASS = "13311133";
+    private static final String JDBC_CONNECTION_DB = null;
+    private static final String JDBC_CONNECTION_USER = null;
+    private static final String JDBC_CONNECTION_PASS = null;
     private static final String TABLE_NAME = "group_users";
     private List<ModelUser> usersList = null;
 
     public PDbUserDao(){
-        if(usersList == null || usersList.size() == 0){
+        if((usersList == null || usersList.size() == 0) && JDBC_CONNECTION_DB != null){
             usersList = new ArrayList<>();
             read();
         }
     }
 
     public void read() {
+        if (usersList == null) usersList = new ArrayList<>();
         try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB, JDBC_CONNECTION_USER, JDBC_CONNECTION_PASS)){
             //Загружаем драйвер
             Class.forName("org.postgresql.Driver");
@@ -34,17 +35,12 @@ public class PDbUserDao implements UserDao<ModelUser> {
             Statement statement = null;
             statement = con.createStatement();
             String query = "Select * From "+TABLE_NAME;
-            try (ResultSet result = statement.executeQuery(query)){
-                while(result.next()){
-                    int id = result.getInt("id");
-                    String name = result.getString("name");
-                    int age = result.getInt("age");
-                    usersList.add(new ModelUser(id, name,age));
-                }
-            }catch (SQLException e){
-                System.out.println("Sql exception: " +e);
-            }catch (Exception e){
-                System.out.println("Exception: " +e);
+            ResultSet result = statement.executeQuery(query);
+            while(result.next()){
+                int id = result.getInt("id");
+                String name = result.getString("name");
+                int age = result.getInt("age");
+                usersList.add(new ModelUser(id, name,age));
             }
 
         }catch (SQLException e){

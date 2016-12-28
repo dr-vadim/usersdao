@@ -16,15 +16,13 @@ import java.util.List;
 public class App {
     public static void main(String[] args) {
         //PDbAutoDao pad = new PDbAutoDao();
-        /*
-        Interfaces.Dao.AutoDao<models.ModelAuto> autoD = new daoImpl.FileAutoDao();
-        Interfaces.Dao.UserDao<models.ModelUser> userD = new daoImpl.FileUserDao();*/
-/*
-        AutoDao<ModelAuto> autoD = new PDbAutoDao();
-        UserDao<ModelUser> userD = new PDbUserDao();*/
         AutoDao<ModelAuto> autoD = AutoFactory.getInstance().getAuto();
         UserDao<ModelUser> userD = UsersFactory.getInstance().getUsers();
-
+        userD.read();
+        autoD.read();
+        Service service = new Service(userD);
+        boolean registred = service.isRegistred(new ModelUser("Vadim",26));
+        System.out.println(registred);
         //userD.add(new models.ModelUser("Sveta",25));
         /*boolean result = autoD.add(new models.ModelAuto("Renault","red",7));
         System.out.println("Add auto result:"+result);
@@ -33,7 +31,7 @@ public class App {
         //autoD.removeByCat(7);
         //autoD.add(new models.ModelAuto("Mercedes","red",5));
         //autoD.remove(18);
-        autoD.update(19, new ModelAuto("Mercedes","white",5));
+        //autoD.update(19, new ModelAuto("Mercedes","white",5));
 
         for (ModelUser u: userD.get()) {
             List<ModelAuto> al = autoD.getByCat(u.getId());
@@ -51,7 +49,6 @@ public class App {
                 }
             }
         }
-
 
     }
 }

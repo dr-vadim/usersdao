@@ -18,7 +18,7 @@ public class FileAutoDao implements AutoDao<ModelAuto> {
     public FileAutoDao(){
         if(mauto == null || mauto.size() == 0){
             mauto = new ArrayList<>();
-            read();
+            //read();
         }
     }
 

@@ -8,6 +8,7 @@ import java.util.List;
  * Created by User on 26.12.2016.
  */
 public interface Dao<T extends Model> {
+    void read();
     List<T> get();
     T get(int id);
     boolean add(T elem);

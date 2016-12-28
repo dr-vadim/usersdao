@@ -8,19 +8,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PDbAutoDao implements AutoDao<ModelAuto> {
-    private static final String JDBC_CONNECTION_DB = "jdbc:postgresql://localhost:5432/usersdao";
-    private static final String JDBC_CONNECTION_USER = "postgres";
-    private static final String JDBC_CONNECTION_PASS = "13311133";
+    private static final String JDBC_CONNECTION_DB = null;
+    private static final String JDBC_CONNECTION_USER = null;
+    private static final String JDBC_CONNECTION_PASS = null;
     List<ModelAuto> mauto = null;
 
     public PDbAutoDao(){
-        if(mauto == null || mauto.size() == 0){
+        if((mauto == null || mauto.size() == 0) && JDBC_CONNECTION_DB != null){
             mauto = new ArrayList<>();
             read();
         }
     }
 
     public void read() {
+        if (mauto == null) mauto = new ArrayList<>();
         try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB, JDBC_CONNECTION_USER, JDBC_CONNECTION_PASS)){
             //Загружаем драйвер
             Class.forName("org.postgresql.Driver");

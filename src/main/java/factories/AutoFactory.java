@@ -5,6 +5,8 @@ import Interfaces.Models.Model;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Properties;
 
 /**
@@ -25,9 +27,24 @@ public class AutoFactory<T extends Model> {
 
         try(FileInputStream fin = new FileInputStream(PROPERTIES_PATH)){
             prop.load(fin);
-            String autoClassName = prop.getProperty("auto.class");
+            String dataType = prop.getProperty("data.type");
+            String autoClassName = prop.getProperty("auto.class."+dataType);
             auto = (AutoDao<T>) Class.forName(autoClassName).newInstance();
-        }catch (IOException | IllegalAccessException | InstantiationException | ClassNotFoundException e){
+            if(dataType.equals("jdbc")){
+                Field connDbF = auto.getClass().getDeclaredField("JDBC_CONNECTION_DB");
+                String connSting = prop.getProperty("connection.db");
+                String dbName = prop.getProperty("db.name");
+                setFinalStatic(connDbF,connSting+dbName);
+
+                Field userF = auto.getClass().getDeclaredField("JDBC_CONNECTION_USER");
+                setFinalStatic(userF,prop.getProperty("db.username"));
+
+                Field passF = auto.getClass().getDeclaredField("JDBC_CONNECTION_PASS");
+                setFinalStatic(passF,prop.getProperty("db.password"));
+            }
+        }catch (IOException | IllegalAccessException | InstantiationException | ClassNotFoundException | NoSuchFieldException e){
+            throw new IllegalArgumentException(e);
+        } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
     }
@@ -38,5 +55,15 @@ public class AutoFactory<T extends Model> {
 
     public AutoDao getAuto(){
         return auto;
+    }
+
+    static void setFinalStatic(Field field, Object newValue) throws Exception {
+        field.setAccessible(true);
+
+        Field modifiersField = Field.class.getDeclaredField("modifiers");
+        modifiersField.setAccessible(true);
+        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
+        field.set(null, newValue);
     }
 }
