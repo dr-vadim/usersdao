@@ -1,3 +1,9 @@
+package daoImpl;
+
+import Interfaces.Models.Model;
+import Interfaces.Dao.UserDao;
+import models.ModelUser;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;

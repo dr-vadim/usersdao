@@ -1,6 +1,13 @@
-import java.io.File;
+import Interfaces.Dao.AutoDao;
+import Interfaces.Dao.UserDao;
+import daoImpl.PDbAutoDao;
+import daoImpl.PDbUserDao;
+import factories.AutoFactory;
+import factories.UsersFactory;
+import models.ModelAuto;
+import models.ModelUser;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -8,21 +15,23 @@ import java.util.List;
  */
 public class App {
     public static void main(String[] args) {
-        PDbAutoDao pad = new PDbAutoDao();
+        //PDbAutoDao pad = new PDbAutoDao();
         /*
-        AutoDao<ModelAuto> autoD = new FileAutoDao();
-        UserDao<ModelUser> userD = new FileUserDao();*/
-
+        Interfaces.Dao.AutoDao<models.ModelAuto> autoD = new daoImpl.FileAutoDao();
+        Interfaces.Dao.UserDao<models.ModelUser> userD = new daoImpl.FileUserDao();*/
+/*
         AutoDao<ModelAuto> autoD = new PDbAutoDao();
-        UserDao<ModelUser> userD = new PDbUserDao();
+        UserDao<ModelUser> userD = new PDbUserDao();*/
+        AutoDao<ModelAuto> autoD = AutoFactory.getInstance().getAuto();
+        UserDao<ModelUser> userD = UsersFactory.getInstance().getUsers();
 
-        //userD.add(new ModelUser("Sveta",25));
-        /*boolean result = autoD.add(new ModelAuto("Renault","red",7));
+        //userD.add(new models.ModelUser("Sveta",25));
+        /*boolean result = autoD.add(new models.ModelAuto("Renault","red",7));
         System.out.println("Add auto result:"+result);
-        result = autoD.add(new ModelAuto("Mercedes","red",7));
+        result = autoD.add(new models.ModelAuto("Mercedes","red",7));
         System.out.println("Add auto result:"+result);*/
         //autoD.removeByCat(7);
-        //autoD.add(new ModelAuto("Mercedes","red",5));
+        //autoD.add(new models.ModelAuto("Mercedes","red",5));
         //autoD.remove(18);
         autoD.update(19, new ModelAuto("Mercedes","white",5));
 

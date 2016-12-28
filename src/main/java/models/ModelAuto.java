@@ -1,9 +1,11 @@
-import java.util.List;
+package models;
+
+import Interfaces.Models.Model;
 
 /**
  * Created by User on 16.12.2016.
  */
-public class ModelAuto implements Model{
+public class ModelAuto implements Model {
     private final String SEPARATOR = "\t";
     private int id;
     private String model;
@@ -13,18 +15,15 @@ public class ModelAuto implements Model{
     public static enum Fields{
         ID, MODEL, COLOR, USER_ID
     }
-    ModelAuto(){
 
-    }
-
-    ModelAuto(int id, String model, String color, int userId){
+    public ModelAuto(int id, String model, String color, int userId){
         this.id = id;
         this.model = model;
         this.color = color;
         this.userId = userId;
     }
 
-    ModelAuto(String model, String color, int userId){
+    public ModelAuto(String model, String color, int userId){
         this.model = model;
         this.color = color;
         this.userId = userId;

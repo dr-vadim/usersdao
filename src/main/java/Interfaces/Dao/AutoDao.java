@@ -1,3 +1,7 @@
+package Interfaces.Dao;
+
+import Interfaces.Models.Model;
+
 import java.util.List;
 
 /**

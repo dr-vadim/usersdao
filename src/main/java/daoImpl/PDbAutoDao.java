@@ -1,3 +1,8 @@
+package daoImpl;
+
+import Interfaces.Dao.AutoDao;
+import models.ModelAuto;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +13,7 @@ public class PDbAutoDao implements AutoDao<ModelAuto> {
     private static final String JDBC_CONNECTION_PASS = "13311133";
     List<ModelAuto> mauto = null;
 
-    PDbAutoDao(){
+    public PDbAutoDao(){
         if(mauto == null || mauto.size() == 0){
             mauto = new ArrayList<>();
             read();

@@ -1,3 +1,7 @@
+package models;
+
+import Interfaces.Models.Model;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -5,7 +9,7 @@ import java.util.List;
 /**
  * Created by User on 16.12.2016.
  */
-public class ModelUser implements Model{
+public class ModelUser implements Model {
     private final String SEPARATOR = "\t";
     private int id;
     private String name;
@@ -16,23 +20,23 @@ public class ModelUser implements Model{
         ID, NAME, AGE
     }
 
-    ModelUser(int id, String name, int age, List<ModelAuto> auto){
+    public ModelUser(int id, String name, int age, List<ModelAuto> auto){
         this(id,name,age);
         this.auto.addAll(auto);
     }
 
-    ModelUser(int id, String name, int age, ModelAuto auto){
+    public ModelUser(int id, String name, int age, ModelAuto auto){
         this(id,name,age);
         this.auto.add(auto);
     }
 
-    ModelUser(int id, String name, int age){
+    public ModelUser(int id, String name, int age){
         this.id = id;
         this.name = name;
         this.age = age;
     }
 
-    ModelUser(String name, int age){
+    public ModelUser(String name, int age){
         this.name = name;
         this.age = age;
     }

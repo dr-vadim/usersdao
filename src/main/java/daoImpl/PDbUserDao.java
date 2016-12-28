@@ -1,3 +1,9 @@
+package daoImpl;
+
+import Interfaces.Models.Model;
+import Interfaces.Dao.UserDao;
+import models.ModelUser;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +18,7 @@ public class PDbUserDao implements UserDao<ModelUser> {
     private static final String TABLE_NAME = "group_users";
     private List<ModelUser> usersList = null;
 
-    PDbUserDao(){
+    public PDbUserDao(){
         if(usersList == null || usersList.size() == 0){
             usersList = new ArrayList<>();
             read();
