@@ -16,7 +16,7 @@ public class FileUserDao implements UserDao<ModelUser> {
     private final String SEPARATOR = "\t";
     private List<ModelUser> usersList = null;
 
-    FileUserDao(){
+    public FileUserDao(){
         if(usersList == null || usersList.size() == 0){
             usersList = new ArrayList<>();
             read();
