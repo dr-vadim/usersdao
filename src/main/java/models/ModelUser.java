@@ -1,6 +1,6 @@
 package models;
 
-import Interfaces.Models.Model;
+import interfaces.models.Model;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,6 +18,10 @@ public class ModelUser implements Model {
 
     public static enum Fields{
         ID, NAME, AGE
+    }
+
+    public ModelUser(int id){
+        this.id = id;
     }
 
     public ModelUser(int id, String name, int age, List<ModelAuto> auto){

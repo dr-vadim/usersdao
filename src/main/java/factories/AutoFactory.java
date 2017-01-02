@@ -1,10 +1,12 @@
 package factories;
 
-import Interfaces.Dao.AutoDao;
-import Interfaces.Models.Model;
+import interfaces.dao.AutoDao;
+import interfaces.models.Model;
 
+import javax.sql.DataSource;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Properties;
@@ -16,7 +18,7 @@ public class AutoFactory<T extends Model> {
     private static AutoFactory instance;
     private static final String PROPERTIES_PATH = "./src/main/resources/context.properties";
 
-    private AutoDao<T> auto;
+    private AutoDao auto;
 
     static {
         instance = new AutoFactory();
@@ -29,20 +31,13 @@ public class AutoFactory<T extends Model> {
             prop.load(fin);
             String dataType = prop.getProperty("data.type");
             String autoClassName = prop.getProperty("auto.class."+dataType);
-            auto = (AutoDao<T>) Class.forName(autoClassName).newInstance();
             if(dataType.equals("jdbc")){
-                Field connDbF = auto.getClass().getDeclaredField("JDBC_CONNECTION_DB");
-                String connSting = prop.getProperty("connection.db");
-                String dbName = prop.getProperty("db.name");
-                setFinalStatic(connDbF,connSting+dbName);
-
-                Field userF = auto.getClass().getDeclaredField("JDBC_CONNECTION_USER");
-                setFinalStatic(userF,prop.getProperty("db.username"));
-
-                Field passF = auto.getClass().getDeclaredField("JDBC_CONNECTION_PASS");
-                setFinalStatic(passF,prop.getProperty("db.password"));
+                Constructor<?> constructor = Class.forName(autoClassName).getConstructor(DataSource.class);
+                auto = (AutoDao) constructor.newInstance(DataSourceFactory.getInstance().getDataSource());
+            }else{
+                auto = (AutoDao) Class.forName(autoClassName).newInstance();
             }
-        }catch (IOException | IllegalAccessException | InstantiationException | ClassNotFoundException | NoSuchFieldException e){
+        }catch (IOException | IllegalAccessException | InstantiationException | ClassNotFoundException e){
             throw new IllegalArgumentException(e);
         } catch (Exception e) {
             throw new IllegalArgumentException(e);

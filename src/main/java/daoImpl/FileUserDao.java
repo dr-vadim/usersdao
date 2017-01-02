@@ -1,30 +1,31 @@
 package daoImpl;
 
-import Interfaces.Models.Model;
-import Interfaces.Dao.UserDao;
+import interfaces.models.Model;
+import interfaces.dao.UserDao;
+import models.ModelAuto;
 import models.ModelUser;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by User on 17.12.2016.
  */
-public class FileUserDao implements UserDao<ModelUser> {
+public class FileUserDao implements UserDao {
     private final String FILE_PATH = "./src/main/resources/users.txt";
     private final String SEPARATOR = "\t";
-    private List<ModelUser> usersList = null;
+    private Map<Integer,ModelUser> usersList = null;
 
     public FileUserDao(){
-        if(usersList == null || usersList.size() == 0){
-            usersList = new ArrayList<>();
-            //read();
-        }
+        usersList = new HashMap<>();
+        read();
     }
 
-    FileUserDao(List<ModelUser> users){
-        usersList = new ArrayList<ModelUser>(users);
+    FileUserDao(Map<Integer,ModelUser> users){
+        usersList = new HashMap<>(users);
     }
 
     public void read() {
@@ -49,7 +50,7 @@ public class FileUserDao implements UserDao<ModelUser> {
                     int id = Integer.valueOf(strs[ModelUser.Fields.ID.ordinal()]);
                     String name = strs[ModelUser.Fields.NAME.ordinal()];
                     int age = Integer.valueOf(strs[ModelUser.Fields.AGE.ordinal()]);
-                    usersList.add(new ModelUser(id, name,age));
+                    usersList.put(id,new ModelUser(id, name,age));
                 }catch(Exception e){
                     System.out.println("Exception: "+e.getMessage());
                     continue;
@@ -69,7 +70,7 @@ public class FileUserDao implements UserDao<ModelUser> {
 
         try (FileWriter fw = new FileWriter(FILE_PATH)){
             String newStr = "";
-            for (ModelUser mu: usersList) {
+            for (ModelUser mu: usersList.values()) {
                 newStr += mu.toString()+"\n";
             }
             System.out.println(newStr);
@@ -86,7 +87,7 @@ public class FileUserDao implements UserDao<ModelUser> {
 
     }
 
-    public List<ModelUser> get() {
+    public Map<Integer,ModelUser> get() {
         if(usersList == null)
             read();
         return usersList;
@@ -96,18 +97,19 @@ public class FileUserDao implements UserDao<ModelUser> {
         if(usersList == null)
             read();
 
-        for (ModelUser mu: usersList) {
+        for (ModelUser mu: usersList.values()) {
             if(id == mu.getId())
                 return mu;
         }
         return null;
     }
 
-    public boolean add(List<ModelUser> users){
+    public boolean add(Map<Integer,ModelUser> users){
         boolean result = false;
         if(users != null && users.size() > 0){
-            result = usersList.addAll(users);
+            usersList.putAll(users);
             writeFile();
+            result = true;
         }
         return result;
     }
@@ -115,44 +117,28 @@ public class FileUserDao implements UserDao<ModelUser> {
     public boolean add(ModelUser user){
         boolean result = false;
         if(user != null){
-            result = usersList.add(user);
+            result = usersList.put(user.getId(),user) != null ? true : false;
             writeFile();
         }
         return result;
     }
 
-    public <A extends Model> void addAuto(List<A> auto, int userId){
-        ModelUser user = get(userId);
-        int index = usersList.indexOf(user);
-        if(index >= 0) {
-            user.setAuto(auto);
-            usersList.set(index, user);
-        }
+    public void addAuto(List<ModelAuto> auto, int userId){
+        usersList.get(userId).setAuto(auto);
     }
 
-    public <A extends Model> void addAuto(A auto, int userId){
-        ModelUser user = get(userId);
-        int index = usersList.indexOf(user);
-        if(index >= 0) {
-            user.setAuto(auto);
-            usersList.set(index, user);
-        }
+    public void addAuto(ModelAuto auto, int userId){
+        usersList.get(userId).setAuto(auto);
     }
 
     public boolean update(int id, ModelUser user){
         boolean result = false;
-        List<ModelUser> temp = new ArrayList<>(usersList);
-        int index = 0;
-        for(ModelUser u: usersList){
-            if(u.getId() == id){
-                user.setId(id);
-                temp.set(index,user);
-                result = true;
-            }
-            index++;
+        Map<Integer,ModelUser> temp = new HashMap<>(usersList);
+        result = temp.replace(id,user) != null ? true : false;
+        if(result){
+            usersList = temp;
+            writeFile();
         }
-        usersList = temp;
-        if(result) writeFile();
         return result;
     }
 
@@ -160,14 +146,13 @@ public class FileUserDao implements UserDao<ModelUser> {
         boolean result = false;
         if(usersList == null)
             read();
-        List<ModelUser> tmp = new ArrayList<>(usersList);
-        for (ModelUser mu: usersList) {
-            if(id == mu.getId()){
-                result = tmp.remove(mu);
-            }
+        Map<Integer,ModelUser> tmp = new HashMap<>(usersList);
+        result = tmp.remove(id) != null ? true : false;
+
+        if(result) {
+            usersList = tmp;
+            writeFile();
         }
-        usersList = tmp;
-        if(result) writeFile();
         return result;
     }
 

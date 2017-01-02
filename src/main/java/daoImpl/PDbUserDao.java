@@ -1,198 +1,116 @@
 package daoImpl;
 
-import Interfaces.Models.Model;
-import Interfaces.Dao.UserDao;
+import interfaces.dao.AutoDao;
+import interfaces.models.Model;
+import interfaces.dao.UserDao;
+import models.ModelAuto;
 import models.ModelUser;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by User on 26.12.2016.
  */
-public class PDbUserDao implements UserDao<ModelUser> {
-    private static final String JDBC_CONNECTION_DB = null;
-    private static final String JDBC_CONNECTION_USER = null;
-    private static final String JDBC_CONNECTION_PASS = null;
+public class PDbUserDao implements UserDao {
     private static final String TABLE_NAME = "group_users";
-    private List<ModelUser> usersList = null;
+    //language=SQL
+    private static final String SQL_SELECT_ALL = "SELECT * FROM group_users";
+    //language=SQL
+    private static final String SQL_SELECT_BY_ID = "SELECT * FROM group_users WHERE id = ?";
+    //language=SQL
+    private static final String SQL_INSER_NEW = "INSERT INTO group_users(name,age) VALUE (?,?)";
+    //language=SQL
+    private static final String SQL_INSER_MULTIPLE = "INSERT INTO group_users(name,age) VALUES ";
+    //language=SQL
+    private static final String SQL_UPDATE_USER = "UPDATE group_users Set name=?,age=? Where id=?";
+    //language=SQL
+    private static final String SQL_DELETE_USER = "DELETE FROM group_users WHERE id=?";
+    //language=SQL
+    private static final String SQL_DELETE_ALL = "Delete From group_users";
 
-    public PDbUserDao(){
-        if((usersList == null || usersList.size() == 0) && JDBC_CONNECTION_DB != null){
-            usersList = new ArrayList<>();
-            read();
-        }
+    private List<ModelUser> usersList = null;
+    private JdbcTemplate template;
+
+    public PDbUserDao(DataSource dataSource){
+        template = new JdbcTemplate(dataSource);
     }
+
+    private RowMapper<ModelUser> rowMapper = (ResultSet rs, int i) -> {
+        ModelUser user = new ModelUser(rs.getInt("id"),rs.getString("name"),
+                rs.getInt("age"));
+        return user;
+    };
 
     public void read() {
-        if (usersList == null) usersList = new ArrayList<>();
-        try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB, JDBC_CONNECTION_USER, JDBC_CONNECTION_PASS)){
-            //Загружаем драйвер
-            Class.forName("org.postgresql.Driver");
-            System.out.println("Драйвер подключен");
 
-            Statement statement = null;
-            statement = con.createStatement();
-            String query = "Select * From "+TABLE_NAME;
-            ResultSet result = statement.executeQuery(query);
-            while(result.next()){
-                int id = result.getInt("id");
-                String name = result.getString("name");
-                int age = result.getInt("age");
-                usersList.add(new ModelUser(id, name,age));
-            }
-
-        }catch (SQLException e){
-            throw new RuntimeException("Sql exception: "+e.getMessage());
-        }catch (Exception e){
-            throw new RuntimeException("Exception: "+e.getMessage());
-        }
     }
     @Override
-    public List<ModelUser> get() {
-        return usersList;
+    public Map<Integer,ModelUser> get() {
+        List<ModelUser> listUser = template.query(SQL_SELECT_ALL,new Object[]{},rowMapper);
+        Map<Integer,ModelUser> users =
+                listUser.stream().collect(Collectors.toMap(i -> i.getId(),i -> i));
+        return users;
     }
 
     @Override
     public ModelUser get(int id) {
-        if(usersList == null)
-            read();
-
-        for (ModelUser mu: usersList) {
-            if(id == mu.getId())
-                return mu;
-        }
-        return null;
+        return template.queryForObject(SQL_SELECT_BY_ID,new Object[]{id},rowMapper);
     }
 
     @Override
     public boolean add(ModelUser user) {
-        try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB,JDBC_CONNECTION_USER,JDBC_CONNECTION_PASS)){
-            PreparedStatement preparedStatement = null;
-            preparedStatement = con.prepareStatement("Insert Into "+TABLE_NAME+"(name,age) Values(?,?) RETURNING id");
-            preparedStatement.setString(1,user.getName());
-            preparedStatement.setInt(2,user.getAge());
-            ResultSet res = preparedStatement.executeQuery();
-            while(res.next()) {
-                user.setId(res.getInt("id"));
-            }
-        }catch (SQLException e){
-            throw new IllegalArgumentException("SQL exception: "+e.getMessage());
-        }
-        usersList.add(user);
-        return true;
+        int result = 0;
+        Object[] args = {user.getName(),user.getAge()};
+        int[] types = {Types.VARCHAR,Types.INTEGER};
+        result = template.update(SQL_UPDATE_USER,args,types);
+        return (result > 0) ? true : false;
     }
 
     @Override
-    public boolean add(List<ModelUser> users) {
-        try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB,JDBC_CONNECTION_USER,JDBC_CONNECTION_PASS)){
-            for(ModelUser user: users) {
-                PreparedStatement preparedStatement = null;
-                preparedStatement = con.prepareStatement("Insert Into "+TABLE_NAME+"(name,age) Values(?,?) RETURNING id");
-                preparedStatement.setString(1, user.getName());
-                preparedStatement.setInt(2, user.getAge());
-                ResultSet res = preparedStatement.executeQuery();
-                while(res.next()) {
-                    user.setId(res.getInt("id"));
-                    usersList.add(user);
-                }
-            }
-        }catch (SQLException e){
-            throw new IllegalArgumentException("SQL exception: "+e.getMessage());
+    public boolean add(Map<Integer,ModelUser> users) {
+        int result = 0;
+        String[] values = new String[users.size()];
+        Object[] args = new Object[users.size() * 2];
+        int j = 0;
+        int i = 0;
+        for(ModelUser user: users.values()){
+            values[i] = "(?,?)";
+            args[j++] = user.getName();
+            args[j++] = user.getAge();
+            i++;
         }
-        return true;
+        result = template.update(SQL_INSER_MULTIPLE+String.join(",",values),args);
+        return (result > 0) ? true : false;
     }
 
     @Override
     public boolean update(int id, ModelUser user) {
-        boolean result = false;
-        List<ModelUser> temp = new ArrayList<>(usersList);
-        int index = 0;
-        try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB,JDBC_CONNECTION_USER,JDBC_CONNECTION_PASS)) {
-            PreparedStatement preparedStatement = null;
-            preparedStatement = con.prepareStatement("Update "+TABLE_NAME+" Set name=?,age=? Where id=?");
-            preparedStatement.setString(1,user.getName()); // name
-            preparedStatement.setInt(2,user.getAge()); // age
-            preparedStatement.setInt(4,id); // condition id
-            int res = preparedStatement.executeUpdate();
-            result = (res > 0) ? true : false;
-        }catch(SQLException e){
-            throw new IllegalArgumentException("Sql exception: "+e);
-        }
-        if(result) {
-            for (ModelUser ma : usersList) {
-                if (id == ma.getId()) {
-                    user.setId(id);
-                    System.out.println("Update method");
-                    temp.set(index, user);
-                    result = true;
-                }
-                index++;
-            }
-            usersList = temp;
-        }
-        return result;
+        int result = 0;
+        Object[] args = {user.getName(), user.getAge()};
+        int[] types = {Types.VARCHAR,Types.INTEGER};
+        result = template.update(SQL_UPDATE_USER,args,types);
+        return (result > 0) ? true : false;
     }
 
     @Override
     public boolean remove(int id) {
-        boolean result = false;
-        try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB,JDBC_CONNECTION_USER,JDBC_CONNECTION_PASS)) {
-            PreparedStatement preparedStatement = null;
-            preparedStatement = con.prepareStatement("Delete From "+TABLE_NAME+" Where id=?");
-            preparedStatement.setInt(1,id); // condition id
-            int res = preparedStatement.executeUpdate();
-            result = (res > 0) ? true : false;
-        }catch(SQLException e){
-            throw new IllegalArgumentException("Sql exception: "+e);
-        }
-        if(result) {
-            List<ModelUser> temp = new ArrayList<>(usersList);
-            for (ModelUser ma : usersList) {
-                if (id == ma.getId()) {
-                    result = temp.remove(ma);
-                }
-            }
-            usersList = temp;
-        }
-        return result;
+        int result = 0;
+        result = template.update(SQL_DELETE_USER, new Object[]{id},new int[]{Types.INTEGER});
+        return (result > 0) ? true : false;
     }
 
     @Override
     public boolean remove() {
-        boolean result = false;
-        try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB,JDBC_CONNECTION_USER,JDBC_CONNECTION_PASS)) {
-            Statement statement = null;
-            statement = con.createStatement();
-            String query = "Delete * From "+TABLE_NAME;
-            int res = statement.executeUpdate(query);
-            result = (res > 0) ? true : false;
-        }catch(SQLException e){
-            throw new IllegalArgumentException("Sql exception: "+e);
-        }
-        if(result)
-            usersList.clear();
-        return result;
-    }
-
-    @Override
-    public <A extends Model> void addAuto(A auto, int userId) {
-        ModelUser user = get(userId);
-        int index = usersList.indexOf(user);
-        if(index >= 0) {
-            user.setAuto(auto);
-            usersList.set(index, user);
-        }
-    }
-
-    @Override
-    public <A extends Model> void addAuto(List<A> auto, int userId) {
-        ModelUser user = get(userId);
-        int index = usersList.indexOf(user);
-        if(index >= 0) {
-            user.setAuto(auto);
-            usersList.set(index, user);
-        }
+        int result = 0;
+        result = template.update(SQL_DELETE_ALL);
+        return result > 0 ? true : false;
     }
 }

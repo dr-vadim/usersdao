@@ -1,25 +1,26 @@
 package daoImpl;
 
-import Interfaces.Dao.AutoDao;
+import interfaces.dao.AutoDao;
 import models.ModelAuto;
+import models.ModelUser;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by User on 17.12.2016.
  */
-public class FileAutoDao implements AutoDao<ModelAuto> {
+public class FileAutoDao implements AutoDao {
     private final String FILE_PATH = "./src/main/resources/auto.txt";
     private final String SEPARATOR = "\t";
-    List<ModelAuto> mauto = null;
+    Map<Integer,ModelAuto> mauto = null;
 
     public FileAutoDao(){
-        if(mauto == null || mauto.size() == 0){
-            mauto = new ArrayList<>();
-            //read();
-        }
+        mauto = new HashMap<>();
+        read();
     }
 
     public void read() {
@@ -45,7 +46,7 @@ public class FileAutoDao implements AutoDao<ModelAuto> {
                     String model = strs[ModelAuto.Fields.MODEL.ordinal()];
                     String color = strs[ModelAuto.Fields.COLOR.ordinal()];
                     int userId = Integer.valueOf(strs[ModelAuto.Fields.USER_ID.ordinal()]);
-                    mauto.add(new ModelAuto(id, model,color,userId));
+                    mauto.put(id,new ModelAuto(id, model,color,new ModelUser(userId)));
                 }catch(Exception e){
                     System.out.println(e);
                     continue;
@@ -67,7 +68,7 @@ public class FileAutoDao implements AutoDao<ModelAuto> {
         try (FileWriter fw = new FileWriter(FILE_PATH)){
 
             String newTxt = "";
-            for (ModelAuto ma: mauto) {
+            for (ModelAuto ma: mauto.values()) {
                 newTxt += ma.toString()+"\n";
             }
             try {
@@ -83,19 +84,19 @@ public class FileAutoDao implements AutoDao<ModelAuto> {
 
     }
 
-    public List<ModelAuto> get() {
+    public Map<Integer,ModelAuto> get() {
         if(mauto == null)
             read();
         return mauto;
     }
 
-    public List<ModelAuto> getByCat(int id) {
+    public Map<Integer,ModelAuto> getByUser(int id) {
         if(mauto == null)
             read();
-        List<ModelAuto> malist = new ArrayList<>();
-        for (ModelAuto ma: mauto) {
-            if(id == ma.getUser())
-                malist.add(ma);
+        Map<Integer,ModelAuto> malist = new HashMap<>();
+        for (ModelAuto ma: mauto.values()) {
+            if(id == ma.getUser().getId())
+                malist.put(id,ma);
         }
         return malist;
     }
@@ -104,17 +105,19 @@ public class FileAutoDao implements AutoDao<ModelAuto> {
         if(mauto == null)
             read();
 
-        for (ModelAuto ma: mauto) {
+        for (ModelAuto ma: mauto.values()) {
             if(id == ma.getId()) return ma;
         }
         return null;
     }
 
-    public boolean add(List<ModelAuto> elements){
+    @Override
+    public boolean add(Map<Integer,ModelAuto> elements){
         boolean result = false;
         if(elements != null && elements.size() > 0){
-            result = mauto.addAll(elements);
+            mauto.putAll(elements);
             writeFile();
+            return true;
         }
         return result;
     }
@@ -122,21 +125,22 @@ public class FileAutoDao implements AutoDao<ModelAuto> {
     public boolean add(ModelAuto element){
         boolean result = false;
         if(element != null){
-            result = mauto.add(element);
+            mauto.put(element.getId(),element);
             writeFile();
+            return true;
         }
         return result;
     }
 
     public boolean update(int id,ModelAuto auto){
         boolean result = false;
-        List<ModelAuto> temp = new ArrayList<>(mauto);
+        Map<Integer,ModelAuto> temp = new HashMap<>(mauto);
         int index = 0;
-        for (ModelAuto ma: mauto) {
+        for (ModelAuto ma: mauto.values()) {
             if(id == ma.getId()){
                 auto.setId(id);
                 System.out.println("Update method");
-                temp.set(index, auto);
+                temp.replace(id,auto);
                 result = true;
             }
             index++;
@@ -150,10 +154,11 @@ public class FileAutoDao implements AutoDao<ModelAuto> {
         boolean result = false;
         if(mauto == null)
             read();
-        List<ModelAuto> temp = new ArrayList<>(mauto);
-        for (ModelAuto ma: mauto) {
+        Map<Integer,ModelAuto> temp = new HashMap<>(mauto);
+        for (ModelAuto ma: mauto.values()) {
             if(id == ma.getId()){
-                result = temp.remove(ma);
+                ModelAuto auto = temp.remove(id);
+                result = auto != null ? true : false;
             }
         }
         mauto = temp;
@@ -161,14 +166,15 @@ public class FileAutoDao implements AutoDao<ModelAuto> {
         return result;
     }
 
-    public boolean removeByCat(int catId){
+    @Override
+    public boolean removeByUser(int userId){
         boolean result = false;
         if(mauto == null)
             read();
-        List<ModelAuto> temp = new ArrayList<>(mauto);
-        for (ModelAuto ma: mauto) {
-            if(catId == ma.getUser()){
-                result = temp.remove(ma);
+        Map<Integer,ModelAuto> temp = new HashMap<>(mauto);
+        for (ModelAuto ma: mauto.values()) {
+            if(userId == ma.getUser().getId()){
+                result = temp.remove(ma) != null ? true : false;
             }
         }
         mauto = temp;

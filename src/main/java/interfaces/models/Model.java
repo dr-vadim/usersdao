@@ -1,4 +1,4 @@
-package Interfaces.Models;
+package interfaces.models;
 
 /**
  * Created by User on 17.12.2016.

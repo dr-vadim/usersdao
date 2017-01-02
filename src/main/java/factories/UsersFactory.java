@@ -1,22 +1,21 @@
 package factories;
 
-import Interfaces.Dao.UserDao;
-import Interfaces.Models.Model;
+import interfaces.dao.UserDao;
+import interfaces.models.Model;
 
+import javax.sql.DataSource;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Properties;
 
-/**
- * Created by User on 28.12.2016.
- */
 public class UsersFactory<T extends Model> {
     private static UsersFactory instance;
     private static final String PROPERTIES_PATH = "./src/main/resources/context.properties";
 
-    private UserDao<T> users;
+    private UserDao users;
 
     static {
         instance = new UsersFactory();
@@ -28,22 +27,14 @@ public class UsersFactory<T extends Model> {
             prop.load(fin);
             String dataType = prop.getProperty("data.type");
             String userClassName = prop.getProperty("user.class."+dataType);
-            users = (UserDao<T>) Class.forName(userClassName).newInstance();
+
             if(dataType.equals("jdbc")){
-                System.out.println("data type is jdbc");
-                Field connDbF = users.getClass().getDeclaredField("JDBC_CONNECTION_DB");
-                String connSting = prop.getProperty("connection.db");
-                String dbName = prop.getProperty("db.name");
-                setFinalStatic(connDbF,connSting+dbName);
-
-                Field userF = users.getClass().getDeclaredField("JDBC_CONNECTION_USER");
-                setFinalStatic(userF,prop.getProperty("db.username"));
-
-                Field passF = users.getClass().getDeclaredField("JDBC_CONNECTION_PASS");
-                passF.setAccessible(true);
-                setFinalStatic(passF,prop.getProperty("db.password"));
+                Constructor<?> constructor = Class.forName(userClassName).getConstructor(DataSource.class);
+                users = (UserDao) constructor.newInstance(DataSourceFactory.getInstance().getDataSource());
+            }else{
+                users = (UserDao) Class.forName(userClassName).newInstance();
             }
-        }catch (IOException | IllegalAccessException | InstantiationException | ClassNotFoundException | NoSuchFieldException e){
+        }catch (IOException | IllegalAccessException | InstantiationException | ClassNotFoundException e){
             throw new IllegalArgumentException(e);
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
@@ -54,7 +45,7 @@ public class UsersFactory<T extends Model> {
         return instance;
     }
 
-    public UserDao<T> getUsers(){
+    public UserDao getUsers(){
         return users;
     }
 

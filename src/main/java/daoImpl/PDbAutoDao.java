@@ -1,219 +1,140 @@
 package daoImpl;
 
-import Interfaces.Dao.AutoDao;
+import com.sun.rowset.internal.Row;
+import interfaces.dao.AutoDao;
+import interfaces.models.Model;
 import models.ModelAuto;
+import models.ModelUser;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-public class PDbAutoDao implements AutoDao<ModelAuto> {
-    private static final String JDBC_CONNECTION_DB = null;
-    private static final String JDBC_CONNECTION_USER = null;
-    private static final String JDBC_CONNECTION_PASS = null;
-    List<ModelAuto> mauto = null;
+public class PDbAutoDao implements AutoDao {
+    // language=SQL
+    private static final String SQL_SELECT_ALL_AUTO = "SELECT * FROM auto";
+    //language=SQL
+    private static final String SQL_SELECT_AUTO_BY_USER = "SELECT * FROM auto WHERE user_id = ?";
+    //language=SQL
+    private static final String SQL_SELECT_AUTO_BY_ID = "SELECT * FROM auto WHERE id = ?";
+    //language=SQL
+    private static final String SQL_UPDATE_AUTO = "UPDATE auto SET name=?,color=?,user_id=? WHERE id=?";
+    //language=SQL
+    private static final String SQL_INSERT_NEW_AUTO = "INSERT INTO auto (name,color,user_id) VALUES(?,?,?)";
+    //language=SQL
+    private static final String SQL_DELETE_ALL_AUTO = "DELETE FROM auto";
+    //language=SQL
+    private static final String SQL_DELETE_AUTO = "DELETE FROM auto WHERE id=?";
+    //language=SQL
+    private static final String SQL_DELETE_AUTO_BY_USER = "DELETE FROM auto WHERE user_id=?";
 
-    public PDbAutoDao(){
-        if((mauto == null || mauto.size() == 0) && JDBC_CONNECTION_DB != null){
-            mauto = new ArrayList<>();
-            read();
-        }
+    private Map<Integer,ModelAuto> mauto;
+    private JdbcTemplate template;
+
+    public PDbAutoDao(DataSource dataSource){
+        template = new JdbcTemplate(dataSource);
+        mauto = new HashMap<>();
     }
+
+    private RowMapper<ModelAuto> autoRowMapper = (ResultSet rs, int i) -> {
+
+        ModelAuto auto = new ModelAuto(rs.getInt("id"),
+                rs.getString("name"), rs.getString("color"),
+                new ModelUser(rs.getInt("user_id")));
+        mauto.put(auto.getId(),auto);
+        return auto;
+    };
+
+    private RowMapper<ModelAuto> autoByUserRowMapper = (ResultSet rs, int i) -> {
+
+        ModelAuto auto = new ModelAuto(rs.getInt("id"),
+              rs.getString("name"), rs.getString("color"), null)  ;
+        int id = auto.getId();
+        mauto.put(id,auto);
+        return auto;
+    };
 
     public void read() {
-        if (mauto == null) mauto = new ArrayList<>();
-        try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB, JDBC_CONNECTION_USER, JDBC_CONNECTION_PASS)){
-            //Загружаем драйвер
-            Class.forName("org.postgresql.Driver");
-            System.out.println("Драйвер подключен");
-
-            Statement statement = null;
-            statement = con.createStatement();
-            String query = "Select * From auto";
-            try (ResultSet result = statement.executeQuery(query)){
-                while(result.next()){
-                    int id = result.getInt("id");
-                    String model = result.getString("name");
-                    String color = result.getString("color");
-                    int userId = result.getInt("user_id");
-                    mauto.add(new ModelAuto(id, model,color,userId));
-                }
-            }catch (SQLException e){
-                throw new RuntimeException("Sql exception: " +e);
-            }catch (Exception e){
-                throw new RuntimeException("Exception: " +e);
-            }
-
-        }catch (SQLException e){
-            throw new RuntimeException("Sql exception: "+e.getMessage());
-        }catch (Exception e){
-            throw new RuntimeException("Exception: "+e.getMessage());
-        }
+        template.query(SQL_SELECT_ALL_AUTO,new Object[]{},autoRowMapper);
     }
 
     @Override
-    public List<ModelAuto> get() {
-        return mauto;
+    public Map<Integer,ModelAuto> get() {
+        List<ModelAuto> autoList = template.query(SQL_SELECT_ALL_AUTO,new Object[]{},autoRowMapper);
+        Map<Integer, ModelAuto> autoMap = autoList.stream().collect(Collectors.toMap(i -> i.getId(), i -> i));
+        return autoMap;
     }
 
     @Override
-    public List<ModelAuto> getByCat(int id) {
-        if(mauto == null)
-            read();
-        List<ModelAuto> malist = new ArrayList<>();
-        for (ModelAuto ma: mauto) {
-            if(id == ma.getUser())
-                malist.add(ma);
-        }
-        return malist;
+    public Map<Integer,ModelAuto> getByUser(int id) {
+        List<ModelAuto> autoList = template.query(SQL_SELECT_AUTO_BY_USER,new Object[]{id},autoByUserRowMapper);
+        Map<Integer, ModelAuto> autoMap = autoList.stream().collect(Collectors.toMap(i -> i.getId(), i -> i));
+        return autoMap;
     }
 
     @Override
     public ModelAuto get(int id) {
-        if(mauto == null)
-            read();
-
-        for (ModelAuto ma: mauto) {
-            if(id == ma.getId()) return ma;
-        }
-        return null;
+        return template.queryForObject(SQL_SELECT_AUTO_BY_ID,new Object[]{id},autoRowMapper);
     }
 
     @Override
-    public boolean add(List<ModelAuto> elements) {
-        try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB,JDBC_CONNECTION_USER,JDBC_CONNECTION_PASS)){
-            PreparedStatement preparedStatement = null;
-            for(ModelAuto auto: elements) {
-                preparedStatement = con.prepareStatement("Insert Into auto(name,color,user_id) Values(?,?,?) RETURNING id");
-                preparedStatement.setString(1,auto.getModel());
-                preparedStatement.setString(2,auto.getColor());
-                preparedStatement.setInt(3,auto.getUser());
-                ResultSet res = preparedStatement.executeQuery();
-                while(res.next()){
-                    auto.setId(res.getInt("id"));
-                }
-                mauto.add(auto);
-            }
-        }catch (SQLException e){
-            throw new IllegalArgumentException("SQL exception: "+e.getMessage());
+    public boolean add(Map<Integer,ModelAuto> elements) {
+        int count = elements.size();
+        int result = 0;
+        for(ModelAuto auto: elements.values()) {
+            Object[] args = {auto.getModel(),auto.getColor(),auto.getUser().getId()};
+            int[] types = { Types.VARCHAR, Types.VARCHAR, Types.INTEGER };
+            result += template.update(SQL_INSERT_NEW_AUTO,args,types);
         }
-        return true;
+        return (count == result) ? true : false;
     }
 
     @Override
     public boolean add(ModelAuto auto) {
-        try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB,JDBC_CONNECTION_USER,JDBC_CONNECTION_PASS)){
-            PreparedStatement preparedStatement = null;
-            preparedStatement = con.prepareStatement("Insert Into auto(name,color,user_id) Values(?,?,?) RETURNING id");
-            preparedStatement.setString(1,auto.getModel());
-            preparedStatement.setString(2,auto.getColor());
-            preparedStatement.setInt(3,auto.getUser());
-            ResultSet res = preparedStatement.executeQuery();
-            while(res.next()){
-                auto.setId(res.getInt("id"));
-            }
-        }catch (SQLException e){
-            throw new IllegalArgumentException("SQL exception: "+e.getMessage());
-        }
-        mauto.add(auto);
-        return true;
+        int result = 0;
+        Object[] args = {auto.getModel(),auto.getColor(),auto.getUser().getId()};
+        int[] types = { Types.VARCHAR, Types.VARCHAR, Types.INTEGER };
+        result = template.update(SQL_INSERT_NEW_AUTO,args,types);
+        return (result > 0) ? true : false;
     }
 
     @Override
     public boolean update(int id, ModelAuto auto) {
-        boolean result = false;
-        List<ModelAuto> temp = new ArrayList<>(mauto);
-        int index = 0;
-        try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB,JDBC_CONNECTION_USER,JDBC_CONNECTION_PASS)) {
-            PreparedStatement preparedStatement = null;
-            preparedStatement = con.prepareStatement("Update auto Set name=?,color=?,user_id=? Where id=?");
-            preparedStatement.setString(1,auto.getModel()); // name
-            preparedStatement.setString(2,auto.getColor()); // color
-            preparedStatement.setInt(3,auto.getUser()); // user_id
-            preparedStatement.setInt(4,id); // condition id
-            int res = preparedStatement.executeUpdate();
-            result = (res > 0) ? true : false;
-        }catch(SQLException e){
-            throw new IllegalArgumentException("Sql exception: "+e);
-        }
-        if(result) {
-            for (ModelAuto ma : mauto) {
-                if (id == ma.getId()) {
-                    auto.setId(id);
-                    System.out.println("Update method");
-                    temp.set(index, auto);
-                    result = true;
-                }
-                index++;
-            }
-            mauto = temp;
-        }
-        return result;
+        int result = 0;
+        Object[] args = {auto.getModel(),auto.getColor(),auto.getUser().getId(), id};
+        int[] types = { Types.VARCHAR, Types.VARCHAR, Types.INTEGER, Types.INTEGER };
+        result = template.update(SQL_UPDATE_AUTO,args,types);
+        return (result > 0) ? true : false;
     }
 
     @Override
     public boolean remove(int id) {
-        boolean result = false;
-        try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB,JDBC_CONNECTION_USER,JDBC_CONNECTION_PASS)) {
-            PreparedStatement preparedStatement = null;
-            preparedStatement = con.prepareStatement("Delete From auto Where id=?");
-            preparedStatement.setInt(1,id); // condition id
-            int res = preparedStatement.executeUpdate();
-            result = (res > 0) ? true : false;
-        }catch(SQLException e){
-            throw new IllegalArgumentException("Sql exception: "+e);
-        }
-        if(result) {
-            List<ModelAuto> temp = new ArrayList<>(mauto);
-            for (ModelAuto ma : mauto) {
-                if (id == ma.getId()) {
-                    result = temp.remove(ma);
-                }
-            }
-            mauto = temp;
-        }
-        return result;
+        int result = 0;
+        Object[] args = {id};
+        int[] types = { Types.INTEGER };
+        result = template.update(SQL_DELETE_AUTO,args,types);
+        return (result > 0) ? true : false;
     }
 
     @Override
-    public boolean removeByCat(int cat_id) {
-        boolean result = false;
-        try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB,JDBC_CONNECTION_USER,JDBC_CONNECTION_PASS)) {
-            PreparedStatement preparedStatement = null;
-            preparedStatement = con.prepareStatement("Delete From auto Where user_id=?");
-            preparedStatement.setInt(1,cat_id); // condition id
-            int res = preparedStatement.executeUpdate();
-            result = (res > 0) ? true : false;
-            System.out.println("delete result "+result);
-        }catch(SQLException e){
-            throw new IllegalArgumentException("Sql exception: "+e);
-        }
-        if(result) {
-            List<ModelAuto> temp = new ArrayList<>(mauto);
-            for (ModelAuto ma : mauto) {
-                if (cat_id == ma.getUser()) {
-                    result = temp.remove(ma);
-                }
-            }
-            mauto = temp;
-        }
-        return result;
+    public boolean removeByUser(int userId) {
+        int result = 0;
+        Object[] args = {userId};
+        int[] types = { Types.INTEGER };
+        result = template.update(SQL_DELETE_AUTO_BY_USER,args,types);
+        return (result > 0) ? true : false;
     }
 
     @Override
     public boolean remove() {
-        boolean result = false;
-        try(Connection con = DriverManager.getConnection(JDBC_CONNECTION_DB,JDBC_CONNECTION_USER,JDBC_CONNECTION_PASS)) {
-            Statement statement = null;
-            statement = con.createStatement();
-            String query = "Delete * From auto RETURNING id";
-            int res = statement.executeUpdate(query);
-            result = (res > 0) ? true : false;
-        }catch(SQLException e){
-            throw new IllegalArgumentException("Sql exception: "+e);
-        }
-        if(result)
-            mauto.clear();
-        return result;
+        int result = 0;
+        result = template.update(SQL_DELETE_ALL_AUTO);
+        return (result > 0) ? true : false;
     }
 }

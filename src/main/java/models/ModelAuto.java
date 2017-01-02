@@ -1,6 +1,6 @@
 package models;
 
-import Interfaces.Models.Model;
+import interfaces.models.Model;
 
 /**
  * Created by User on 16.12.2016.
@@ -10,23 +10,23 @@ public class ModelAuto implements Model {
     private int id;
     private String model;
     private String color;
-    private int userId;
+    private ModelUser user;
 
     public static enum Fields{
         ID, MODEL, COLOR, USER_ID
     }
 
-    public ModelAuto(int id, String model, String color, int userId){
+    public ModelAuto(int id, String model, String color, ModelUser user){
         this.id = id;
         this.model = model;
         this.color = color;
-        this.userId = userId;
+        this.user = user;
     }
 
-    public ModelAuto(String model, String color, int userId){
+    public ModelAuto(String model, String color, ModelUser user){
         this.model = model;
         this.color = color;
-        this.userId = userId;
+        this.user = user;
     }
 
     public int getId() {
@@ -53,15 +53,15 @@ public class ModelAuto implements Model {
         this.color = color;
     }
 
-    public int getUser() {
-        return userId;
+    public ModelUser getUser() {
+        return user;
     }
 
-    public void setUser(int user) {
-        this.userId = user;
+    public void setUser(ModelUser user) {
+        this.user = user;
     }
 
     public String toString(){
-        return id+SEPARATOR+model+SEPARATOR+color+SEPARATOR+userId;
+        return id+SEPARATOR+model+SEPARATOR+color+SEPARATOR+user.getId();
     }
 }
